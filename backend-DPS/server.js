@@ -26,7 +26,6 @@ app.use('/alerts', alertsRouter);
 app.use('/users', usersRouter);
 app.use('/reports', reportsRouter);
 app.use('/notifications', notificationsRouter);
-app.use('/notifications', notificationsRouter);
 app.use('/categories', categoriesRouter);
 app.use('/auth', authRouter);
 app.use('/dashboard', dashboardRouter);
