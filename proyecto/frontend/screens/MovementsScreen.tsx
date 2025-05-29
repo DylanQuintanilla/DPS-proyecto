@@ -1,7 +1,17 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { View, Text, StyleSheet, FlatList, RefreshControl, Alert } from "react-native"
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  FlatList, 
+  RefreshControl, 
+  Alert,
+  TouchableOpacity
+} from "react-native"
+import { useAuth } from "../contexts/AuthContext"
+import { FormModal } from "../components/CrudComponents"
 
 interface Movement {
   id: number
@@ -19,6 +29,9 @@ interface Movement {
 export default function MovementsScreen() {
   const [movements, setMovements] = useState<Movement[]>([])
   const [loading, setLoading] = useState(true)
+  const [isModalVisible, setIsModalVisible] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { hasPermission } = useAuth()
 
   useEffect(() => {
     fetchMovements()
@@ -42,12 +55,67 @@ export default function MovementsScreen() {
     }
   }
 
+  const handleAddMovement = () => {
+    setIsModalVisible(true)
+  }
+
+  const handleSubmitMovement = async (formData: any) => {
+    try {
+      setIsSubmitting(true)
+      
+      // Convertir valores numéricos
+      const processedData = {
+        ...formData,
+        producto_id: formData.producto_id,
+        cantidad: parseInt(formData.cantidad, 10),
+        tipo: formData.tipo.toLowerCase()
+      }
+      
+      const response = await fetch("http://localhost:3000/movements", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(processedData),
+      })
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        // Actualizar la lista con el nuevo movimiento
+        fetchMovements()
+        Alert.alert("Éxito", "Movimiento registrado correctamente")
+        setIsModalVisible(false)
+      } else {
+        Alert.alert("Error", result.message || "No se pudo registrar el movimiento")
+      }
+    } catch (error) {
+      console.error("Error submitting movement:", error)
+      Alert.alert("Error", "Error al registrar el movimiento")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("es-ES", {
       style: "currency",
       currency: "USD",
     }).format(value)
   }
+
+  const movementFormFields = [
+  { name: "producto_id", label: "ID del Producto", placeholder: "ID del producto" },
+  { 
+    name: "tipo", 
+    label: "Tipo", 
+    placeholder: "entrada o salida",
+  },
+  { name: "cantidad", label: "Cantidad", placeholder: "0", keyboardType: "number-pad" },
+  { name: "motivo", label: "Motivo", placeholder: "Motivo del movimiento", multiline: true },
+  // Agregar campo precio_producto que faltaba
+  { name: "precio_producto", label: "Precio del Producto", placeholder: "0.00", keyboardType: "decimal-pad" },
+]
 
   const MovementItem = ({ item }: { item: Movement }) => {
     const isEntry = item.tipo === "entrada"
@@ -95,6 +163,17 @@ export default function MovementsScreen() {
 
   return (
     <View style={styles.container}>
+      {hasPermission("create", "movements") && (
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity 
+            style={styles.addButton}
+            onPress={handleAddMovement}
+          >
+            <Text style={styles.addButtonText}>➕ Registrar Movimiento</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       <FlatList
         data={movements}
         keyExtractor={(item) => item.id.toString()}
@@ -107,6 +186,16 @@ export default function MovementsScreen() {
           </View>
         }
       />
+
+      <FormModal
+        visible={isModalVisible}
+        onClose={() => setIsModalVisible(false)}
+        onSubmit={handleSubmitMovement}
+        title="Registrar Movimiento"
+        fields={movementFormFields}
+        initialValues={{}}
+        isSubmitting={isSubmitting}
+      />
     </View>
   )
 }
@@ -115,6 +204,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f8fafc",
+  },
+  actionsContainer: {
+    padding: 16,
+    paddingBottom: 8,
+  },
+  addButton: {
+    backgroundColor: "#059669",
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: "center",
+  },
+  addButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 16,
   },
   listContainer: {
     padding: 16,

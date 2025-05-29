@@ -3,6 +3,7 @@
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
 import AsyncStorage from "@react-native-async-storage/async-storage"
+import { Alert } from "react-native"
 
 interface User {
   id: number
@@ -13,8 +14,9 @@ interface User {
 interface AuthContextType {
   user: User | null
   login: (username: string, password: string) => Promise<boolean>
-  logout: () => Promise<void>
+  logout: () => void
   loading: boolean
+  hasPermission: (action: "create" | "read" | "update" | "delete", resource: string) => boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -71,17 +73,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const logout = async () => {
-    try {
-      await AsyncStorage.removeItem("token")
-      await AsyncStorage.removeItem("user")
-      setUser(null)
-    } catch (error) {
-      console.error("Logout error:", error)
-    }
+  const logout = () => {
+    // Función síncrona para logout inmediato
+    AsyncStorage.removeItem("token")
+      .then(() => AsyncStorage.removeItem("user"))
+      .then(() => {
+        setUser(null)
+        console.log("Logout successful")
+      })
+      .catch((error) => {
+        console.error("Logout error:", error)
+        // Aún así, limpiar el estado del usuario
+        setUser(null)
+      })
   }
 
-  return <AuthContext.Provider value={{ user, login, logout, loading }}>{children}</AuthContext.Provider>
+  // Sistema de permisos basado en roles
+  const hasPermission = (action: "create" | "read" | "update" | "delete", resource: string): boolean => {
+    if (!user) return false;
+
+    // Todos los roles pueden leer (excepto usuarios para roles no admin)
+    if (action === "read") {
+      if (resource === "users" && user.role !== "admin") {
+        return false;
+      }
+      return true;
+    }
+
+    // Admin puede hacer todo
+    if (user.role === "admin") {
+      return true;
+    }
+
+    // Inventario puede crear/actualizar/eliminar todo excepto usuarios
+    if (user.role === "inventario") {
+      return resource !== "users";
+    }
+
+    // Visualizador solo puede leer
+    return false;
+  }
+
+  return (
+    <AuthContext.Provider value={{ user, login, logout, loading, hasPermission }}>
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export function useAuth() {

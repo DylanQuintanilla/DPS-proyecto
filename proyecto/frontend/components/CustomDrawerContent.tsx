@@ -6,10 +6,22 @@ import { useAuth } from "../contexts/AuthContext"
 export default function CustomDrawerContent(props: any) {
   const { user, logout } = useAuth()
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     Alert.alert("Cerrar Sesión", "¿Estás seguro que deseas cerrar sesión?", [
       { text: "Cancelar", style: "cancel" },
-      { text: "Cerrar Sesión", onPress: logout },
+      { 
+        text: "Cerrar Sesión", 
+        onPress: async () => {
+          try {
+            await logout()
+            // No es necesario navegar manualmente, el AppNavigator lo hará automáticamente
+            // cuando el estado de autenticación cambie
+            console.log("Logout successful from drawer")
+          } catch (error) {
+            console.error("Error during logout:", error)
+          }
+        }
+      }
     ])
   }
 
