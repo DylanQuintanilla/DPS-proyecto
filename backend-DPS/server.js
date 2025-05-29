@@ -9,6 +9,7 @@ import reportsRouter from './routes/reports.routes.js';
 import notificationsRouter from './routes/notifications.routes.js';
 import categoriesRouter from './routes/categories.routes.js';
 import authRouter from './routes/auth.routes.js';
+import dashboardRouter from './routes/dashboard.routes.js';
 import { pool } from './dbConfig.js';
 
 const app = express();
@@ -28,6 +29,7 @@ app.use('/notifications', notificationsRouter);
 app.use('/notifications', notificationsRouter);
 app.use('/categories', categoriesRouter);
 app.use('/auth', authRouter);
+app.use('/dashboard', dashboardRouter);
 app.use('/api', routes); // Puedes dejar esto para rutas agrupadas o raíz
 
 // Probar conexión a la base de datos al iniciar

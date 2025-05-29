@@ -8,6 +8,7 @@ import reportsRouter from './reports.routes.js';
 import notificationsRouter from './notifications.routes.js';
 import categoriesRouter from './categories.routes.js';
 import authRouter from './auth.routes.js';
+import dashboardRouter from './dashboard.routes.js';
 
 const router = express.Router();
 
@@ -18,6 +19,7 @@ router.use('/users', usersRouter);
 router.use('/reports', reportsRouter);
 router.use('/notifications', notificationsRouter);
 router.use('/categories', categoriesRouter);
+router.use('/dashboard', dashboardRouter);
 router.use('/auth', authRouter);
 
 // Ruta raíz opcional
